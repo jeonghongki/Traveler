@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/tour_start"
+            android:text="출발지"
+            android:textSize="20dp"
+            android:layout_margin="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:button="@drawable/radio_button_selected"/>
+        <RadioButton
+            android:id="@+id/tour_stopover"
+            android:text="경유지"
+            android:textSize="20dp"
+            android:layout_margin="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:button="@drawable/radio_button_selected" />
+        <RadioButton
+            android:id="@+id/tour_destination"
+            android:text="도착지"
+            android:textSize="20dp"
+            android:layout_margin="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:button="@drawable/radio_button_selected" />
+
+    </RadioGroup>
+</LinearLayout>
