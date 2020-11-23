@@ -3,14 +3,15 @@ package com.example.traeveler;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.PointF;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
 import com.skt.Tmap.TMapPoint;
+import com.skt.Tmap.TMapPolyLine;
 import com.skt.Tmap.TMapView;
 
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ public class MapFragment extends Fragment {
     private GpsTracker gpsTracker;
 
     private FloatingActionButton fab_main, fab_search, fab_gps, fab_navigation;
+    private static Button btn_ScheduleMarkerShow, btn_ScheduleMarkerPathShow, btn_ScheduleCarPathShow;
     private Animation fab_open, fab_close;
     private boolean isFabOpen = false;
 
@@ -70,6 +73,10 @@ public class MapFragment extends Fragment {
         fab_gps = mapview.findViewById(R.id.set_gpslocation);
         fab_navigation = mapview.findViewById(R.id.Tmap_navigation);
 
+        btn_ScheduleMarkerShow = mapview.findViewById(R.id.btn_ScheduleMarkerShow);
+        btn_ScheduleMarkerPathShow = mapview.findViewById(R.id.btn_ScheduleMarkerPathShow);
+        btn_ScheduleCarPathShow = mapview.findViewById(R.id.btn_ScheduleCarPathShow);
+
         fab_main.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -99,6 +106,66 @@ public class MapFragment extends Fragment {
                 toggleFab();
             }
         });
+
+        btn_ScheduleMarkerShow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Registration_place registration_place = new Registration_place(context);
+                if (registration_place.getTourlistLength() != 0) {
+                    tMapView.removeAllMarkerItem();
+                    tMapView.removeAllTMapPolyLine();
+                    for (int i = 0; i < registration_place.getTourlistLength(); i++) {
+                        MarkerSetting(context, registration_place.getTourlistMark(i));
+                        if (i == 0) {
+                            registration_place.getTourlistMark(i).setCalloutSubTitle("출발지");
+                        } else if (i == registration_place.getTourlistLength() - 1) {
+                            registration_place.getTourlistMark(i).setCalloutSubTitle("도착지");
+                        } else {
+                            registration_place.getTourlistMark(i).setCalloutSubTitle("경유지" + i);
+                        }
+                        tMapView.addMarkerItem("Schedule" + i, registration_place.getTourlistMark(i));
+                    }
+                } else {
+                    Toast.makeText(context, "설정한 목적지가 없습니다!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        btn_ScheduleMarkerPathShow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Registration_place registration_place = new Registration_place(context);
+                TMapPolyLine tMapPolyLine = new TMapPolyLine();
+                tMapPolyLine.setOutLineColor(Color.parseColor("#E53942"));
+                tMapPolyLine.setLineWidth(2);
+                for(int i = 0; i <registration_place.getTourlistLength(); i++) {
+                    tMapPolyLine.addLinePoint(registration_place.getTourlistMarkPoint(i));
+                }
+                tMapView.addTMapPolyLine("Schedule_Path", tMapPolyLine);
+            }
+        });
+        btn_ScheduleCarPathShow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final Registration_place registration_place = new Registration_place(context);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            for(int i = 0; i < registration_place.getTourlistLength() - 1; i++) {
+                                TMapPolyLine tMapPolyLine = new TMapData().findPathData(registration_place.getTourlistMarkPoint(i), registration_place.getTourlistMarkPoint(i + 1));
+                                tMapPolyLine.setOutLineColor(Color.parseColor("#E53942"));
+                                tMapPolyLine.setLineWidth(2);
+                                tMapView.addTMapPolyLine("CarPath" + i, tMapPolyLine);
+                                Thread.sleep(500);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }.start();
+            }
+        });
+
         tMapView.setOnEnableScrollWithZoomLevelListener(new TMapView.OnEnableScrollWithZoomLevelCallback() {
             @Override
             public void onEnableScrollWithZoomLevelEvent(float v, TMapPoint tMapPoint) {
@@ -194,4 +261,17 @@ public class MapFragment extends Fragment {
         }
     }
 
+    private void MarkerSetting(Context context, TMapMarkerItem tMapMarkerItem) {
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.map_pin);
+        bitmap = Bitmap.createScaledBitmap(bitmap, 100, 100, false);
+        tMapMarkerItem.setIcon(bitmap);
+    }
+
+    public void ScheduleMarkerShow() { btn_ScheduleMarkerShow.performClick(); }
+
+    public void ScheduleMarkerPathShow() {
+        btn_ScheduleMarkerPathShow.performClick();
+    }
+
+    public void ScheduleCarPathShow() { btn_ScheduleCarPathShow.performClick(); }
 }

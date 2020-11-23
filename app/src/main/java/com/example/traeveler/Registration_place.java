@@ -2,13 +2,14 @@ package com.example.traeveler;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.view.View;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import com.skt.Tmap.TMapMarkerItem;
+import com.skt.Tmap.TMapPoint;
+
+import java.util.ArrayList;
 
 public class Registration_place {
     private Context mContext;
@@ -16,9 +17,20 @@ public class Registration_place {
 
     private RadioGroup radioGroup;
 
+    private static boolean isEmpty_tourStart = true;
+    private static boolean isEmpty_tourDestination = true;
+
+    private static int index_Tourlist = 0;
+
+    private final static ArrayList<TMapMarkerItem> Tour_list = new ArrayList<>();
+
     public Registration_place(Context context, TMapMarkerItem tMapMarkerItem){
         mContext = context;
         m_tMapMarkerItem = tMapMarkerItem;
+    }
+
+    public Registration_place(Context context){
+        mContext = context;
     }
 
     public void RegistrationDialog(){
@@ -28,18 +40,17 @@ public class Registration_place {
             @Override
             public void LayoutDialogSetPositive(View dialogView) {
                 radioGroup = dialogView.findViewById(R.id.radioGroup);
-                ScheduleFragment scheduleFragment = new ScheduleFragment();
                 switch (radioGroup.getCheckedRadioButtonId()){
                     case R.id.tour_start:
-                        if(scheduleFragment.isScheduleEmpty(mContext, "tour_start", m_tMapMarkerItem))
+                        if(isScheduleEmpty(mContext, "tour_start", m_tMapMarkerItem))
                             Toast.makeText(mContext, "출발지로 설정하였습니다.", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.tour_stopover:
-                        if(scheduleFragment.isScheduleEmpty(mContext,"tour_stopover", m_tMapMarkerItem))
+                        if(isScheduleEmpty(mContext,"tour_stopover", m_tMapMarkerItem))
                             Toast.makeText(mContext, "경유지를 추가하였습니다.", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.tour_destination:
-                        if(scheduleFragment.isScheduleEmpty(mContext, "tour_destination", m_tMapMarkerItem))
+                        if(isScheduleEmpty(mContext, "tour_destination", m_tMapMarkerItem))
                             Toast.makeText(mContext, "도착지로 설정하였습니다.", Toast.LENGTH_SHORT).show();
                         break;
                     default:
@@ -56,4 +67,97 @@ public class Registration_place {
         }.LayoutDialog(R.layout.dialog_pin_registration);
         dialog.show();
     }
+
+    public boolean isScheduleEmpty(final Context context, String key, final TMapMarkerItem tMapMarkerItem) {
+        switch (key){
+            case "tour_start":
+                if(isEmpty_tourStart) {
+                    setSchedule(key, tMapMarkerItem);
+                    return true;
+                } else {
+                    changeLocation(context, "출발지", tMapMarkerItem, 0);
+                    return false;
+                }
+            case "tour_stopover":
+                setSchedule(key, tMapMarkerItem);
+                return true;
+            case "tour_destination":
+                if(isEmpty_tourDestination) {
+                    setSchedule(key, tMapMarkerItem);
+                    return true;
+                } else {
+                    changeLocation(context, "도착지", tMapMarkerItem, index_Tourlist);
+                    return false;
+                }
+            default:
+                Toast.makeText(mContext, "일정 추가에 오류가 발생하였습니다!\n잠시후 다시 시도해주세요!", Toast.LENGTH_SHORT).show();
+                return false;
+        }
+    }
+
+    public void setSchedule(String key, TMapMarkerItem tMapMarkerItem) {
+        switch (key){
+            case "tour_start":
+                Tour_list.add(index_Tourlist, tMapMarkerItem);
+                isEmpty_tourStart = false;
+                index_Tourlist++;
+                break;
+            case "tour_stopover":
+                Tour_list.add(index_Tourlist, tMapMarkerItem);
+                index_Tourlist++;
+                break;
+            case "tour_destination":
+                Tour_list.add(index_Tourlist, tMapMarkerItem);
+                isEmpty_tourDestination = false;
+                break;
+            default:
+                Toast.makeText(mContext, "일정 추가에 오류가 발생하였습니다!\n잠시후 다시 시도해주세요!", Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
+    public void changeLocation(final Context context, final String string, final TMapMarkerItem tMapMarkerItem, final int index) {
+        AlertDialog dialog = new DialogSetting(context, "알림", R.drawable.ic_editlocation) {
+            @Override
+            public void DialogSetPositive() {
+                Tour_list.set(index, tMapMarkerItem);
+                Toast.makeText(context, string + "를 변경하였습니다!", Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void LayoutDialogSetPositive(View dialogView) { }
+            @Override
+            public void DialogSetNegative() {
+                Toast.makeText(context, string + " 변경을 취소하였습니다!", Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void LayoutDialogSetNegative(View dialogView) { }
+        }.DialogSimple(string + "가 이미 설정되어 있습니다.\n수정하시겠습니까?");
+        dialog.show();
+    }
+
+    public boolean isEmpty_Tourlist() {
+        if(Tour_list.isEmpty()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public int getTourlistLength() {
+        return Tour_list.size();
+    }
+
+    public String getTourlistTitle(int index) {
+        return Tour_list.get(index).getCalloutTitle();
+    }
+
+    public TMapMarkerItem getTourlistMark(int index) {
+        return Tour_list.get(index);
+    }
+
+    public TMapPoint getTourlistMarkPoint(int index) {
+        return Tour_list.get(index).getTMapPoint();
+    }
+
+    public void setTourlistTitle(String title, int index) { Tour_list.get(index).setCalloutTitle(title);}
 }

@@ -14,6 +14,10 @@ public class MainActivity extends FragmentActivity {
     private ViewPager mViewPager;
     private ContentsPagerAdapter mContentPagerAdapter;
 
+    private boolean ScheduleMarkerShow = false;
+    private boolean ScheduleMarkerPathShow = false;
+    private boolean ScheduleCarPathShow = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.AppTheme);
@@ -37,6 +41,26 @@ public class MainActivity extends FragmentActivity {
             public void onTabSelected(TabLayout.Tab tab) {
                 tab.getIcon().setColorFilter(Color.parseColor("#E53942"), PorterDuff.Mode.SRC_IN);
                 mViewPager.setCurrentItem(tab.getPosition());
+                switch (tab.getPosition()){
+                    case 0:
+                        MapFragment mapFragment = new MapFragment();
+                        if(ScheduleMarkerShow) {
+                            mapFragment.ScheduleMarkerShow();
+                        } else if(ScheduleMarkerPathShow) {
+                            mapFragment.ScheduleMarkerShow();
+                            mapFragment.ScheduleMarkerPathShow();
+                        } else if(ScheduleCarPathShow) {
+                            mapFragment.ScheduleMarkerShow();
+                            mapFragment.ScheduleCarPathShow();
+                        }
+                        break;
+                    case 1:
+                        ScheduleFragment scheduleFragment = new ScheduleFragment();
+                        scheduleFragment.tabClickEvent();
+                        break;
+                    default:
+                        break;
+                }
             }
 
             @Override
@@ -49,5 +73,28 @@ public class MainActivity extends FragmentActivity {
 
             }
         });
+    }
+
+    public void tabchange(int index) {
+        TabLayout.Tab tab = mTabLayout.getTabAt(index);
+        tab.select();
+    }
+
+    public void setScheduleMarkerShow(boolean bool) {
+        this.ScheduleMarkerShow = bool;
+        this.ScheduleMarkerPathShow = !bool;
+        this.ScheduleCarPathShow = !bool;
+    }
+
+    public void setScheduleMarkerPathShow(boolean bool) {
+        this.ScheduleMarkerPathShow = bool;
+        this.ScheduleMarkerShow = !bool;
+        this.ScheduleCarPathShow = !bool;
+    }
+
+    public void setSceduleCarPathShow(boolean bool) {
+        this.ScheduleCarPathShow = bool;
+        this.ScheduleMarkerShow = !bool;
+        this.ScheduleMarkerPathShow = !bool;
     }
 }

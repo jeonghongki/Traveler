@@ -36,6 +36,7 @@
                 android:text="저장"
                 android:textSize="15dp"/>
             <Button
+                android:id="@+id/btn_mapMark"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
@@ -44,6 +45,7 @@
                 android:text="지도표시"
                 android:textSize="15dp"/>
             <Button
+                android:id="@+id/btn_markerPath"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
@@ -52,6 +54,7 @@
                 android:text="전체 경로"
                 android:textSize="15dp"/>
             <Button
+                android:id="@+id/btn_pathSeek"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
@@ -59,6 +62,12 @@
                 android:background="@drawable/btn_nonselect"
                 android:text="경로탐색"
                 android:textSize="15dp"/>
+            <Button
+                android:id="@+id/btn_dataload"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="invisible"
+                android:soundEffectsEnabled="false"/>
         </LinearLayout>
 
         <LinearLayout

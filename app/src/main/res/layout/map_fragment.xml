@@ -10,6 +10,27 @@
         android:layout_height="match_parent"
         android:orientation="vertical"/>
 
+    <Button
+        android:id="@+id/btn_ScheduleMarkerShow"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        android:soundEffectsEnabled="false"/>
+
+    <Button
+        android:id="@+id/btn_ScheduleMarkerPathShow"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        android:soundEffectsEnabled="false"/>
+
+    <Button
+        android:id="@+id/btn_ScheduleCarPathShow"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        android:soundEffectsEnabled="false"/>
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/search_POI"
         android:layout_width="wrap_content"
