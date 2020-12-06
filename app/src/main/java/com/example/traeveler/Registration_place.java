@@ -9,6 +9,7 @@ import android.widget.Toast;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPoint;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class Registration_place {
@@ -159,5 +160,42 @@ public class Registration_place {
         return Tour_list.get(index).getTMapPoint();
     }
 
+    public String getTourlistLongitude(int index) { return String.valueOf(Tour_list.get(index).getTMapPoint().getLongitude()); }
+
+    public String getTourlistLatitude(int index) { return String.valueOf(Tour_list.get(index).getTMapPoint().getLatitude()); }
+
     public void setTourlistTitle(String title, int index) { Tour_list.get(index).setCalloutTitle(title);}
+
+    public void setTourlistFromDB(TravelerDB travelerDB, String Date) {
+        ArrayList<String> Title = new ArrayList<>();
+        ArrayList<Double> Longitude = new ArrayList<>();
+        ArrayList<Double> Latitude = new ArrayList<>();
+        travelerDB.GetQueryData(travelerDB, Date, Title, Longitude, Latitude);
+        setTourlistMarkFromDB(Title, Longitude, Latitude);
+    }
+
+    private void setTourlistMarkFromDB(ArrayList<String> Title, ArrayList<Double> Longitude, ArrayList<Double> Latitude) {
+        for(int i = 0; i < Title.size(); i++) {
+            TMapMarkerItem tMapMarkerItem = new TMapMarkerItem();
+            tMapMarkerItem.setCalloutTitle(Title.get(i));
+            tMapMarkerItem.setTMapPoint(new TMapPoint(Latitude.get(i), Longitude.get(i)));
+            if(i == 0) {
+                tMapMarkerItem.setCalloutSubTitle("출발지");
+                setSchedule("tour_start", tMapMarkerItem);
+            } else if (i == Title.size() - 1) {
+                tMapMarkerItem.setCalloutSubTitle("도착지");
+                setSchedule("tour_destination", tMapMarkerItem);
+            } else {
+                tMapMarkerItem.setCalloutSubTitle("경유지" + i);
+                setSchedule("tour_stopover", tMapMarkerItem);
+            }
+        }
+    }
+
+    public void TourlistReset() {
+        Tour_list.clear();
+        index_Tourlist = 0;
+        isEmpty_tourStart = true;
+        isEmpty_tourDestination = true;
+    }
 }

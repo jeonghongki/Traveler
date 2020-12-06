@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -61,8 +62,8 @@ public class MapFragment extends Fragment {
 
         final TMapView tMapView = new TMapView(context);
         tMapView.setSKTMapApiKey(myTmapApiKey);
-//        tMapView.setCenterPoint(longitude, latitude);
-        tMapView.setCenterPoint(128.099383, 35.153312);
+        tMapView.setCenterPoint(longitude, latitude);
+//        tMapView.setCenterPoint(128.099383, 35.153312);
         linearLayoutTmap.addView(tMapView);
 
         fab_open = AnimationUtils.loadAnimation(context, R.anim.fab_open);
