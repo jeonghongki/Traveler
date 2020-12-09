@@ -44,6 +44,18 @@ public class TravelerDB extends SQLiteOpenHelper {
         sqlDB.execSQL("INSERT INTO travelListTBL VALUES ('" + ListID + "', '" + Title + "', '" + Longitude + "', '" + Latitude + "', " + DateID + ");");
         sqlDB.close();
     }
+    
+    public void DeleteSchedule(TravelerDB travelerDB, String Date) {
+        Cursor c_travelTBL;
+        SQLiteDatabase sqlDB = travelerDB.getWritableDatabase();
+        c_travelTBL = sqlDB.rawQuery("SELECT * FROM travelTBL WHERE Date = " + Date + ";", null);
+        c_travelTBL.moveToFirst();
+        String DateID = c_travelTBL.getString(0);
+
+        sqlDB.execSQL("DELETE FROM travelListTBL WHERE DateID = " + DateID + ";");
+        sqlDB.execSQL("DELETE FROM travelTBL WHERE Date = " + Date + ";");
+        sqlDB.close();
+    }
 
     public void GetQueryData(TravelerDB travelerDB, String Date, ArrayList<String> Title, ArrayList<Double> Longitude, ArrayList<Double> Latitude) {
         Cursor c_travelTBL, c_travelListTBL;

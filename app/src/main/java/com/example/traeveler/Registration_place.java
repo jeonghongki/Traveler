@@ -1,15 +1,15 @@
 package com.example.traeveler;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.view.View;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import com.example.traeveler.dialog.DialogLayout;
+import com.example.traeveler.dialog.DialogSetting;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPoint;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class Registration_place {
@@ -24,6 +24,7 @@ public class Registration_place {
     private static int index_Tourlist = 0;
 
     private final static ArrayList<TMapMarkerItem> Tour_list = new ArrayList<>();
+    private final static ArrayList<String> Delete_Tour = new ArrayList<>();
 
     public Registration_place(Context context, TMapMarkerItem tMapMarkerItem){
         mContext = context;
@@ -35,23 +36,21 @@ public class Registration_place {
     }
 
     public void RegistrationDialog(){
-        AlertDialog dialog = new DialogSetting(mContext, "장소 등록하기", R.drawable.ic_mark) {
-            @Override
-            public void DialogSetPositive() {}
+        new DialogLayout(mContext, "장소 등록하기", R.drawable.ic_mark) {
             @Override
             public void LayoutDialogSetPositive(View dialogView) {
                 radioGroup = dialogView.findViewById(R.id.radioGroup);
-                switch (radioGroup.getCheckedRadioButtonId()){
+                switch (radioGroup.getCheckedRadioButtonId()) {
                     case R.id.tour_start:
-                        if(isScheduleEmpty(mContext, "tour_start", m_tMapMarkerItem))
+                        if (isScheduleEmpty(mContext, "tour_start", m_tMapMarkerItem))
                             Toast.makeText(mContext, "출발지로 설정하였습니다.", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.tour_stopover:
-                        if(isScheduleEmpty(mContext,"tour_stopover", m_tMapMarkerItem))
+                        if (isScheduleEmpty(mContext, "tour_stopover", m_tMapMarkerItem))
                             Toast.makeText(mContext, "경유지를 추가하였습니다.", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.tour_destination:
-                        if(isScheduleEmpty(mContext, "tour_destination", m_tMapMarkerItem))
+                        if (isScheduleEmpty(mContext, "tour_destination", m_tMapMarkerItem))
                             Toast.makeText(mContext, "도착지로 설정하였습니다.", Toast.LENGTH_SHORT).show();
                         break;
                     default:
@@ -60,13 +59,10 @@ public class Registration_place {
                 }
             }
             @Override
-            public void DialogSetNegative() {}
-            @Override
             public void LayoutDialogSetNegative(View dialogView) {
                 Toast.makeText(mContext, "장소 등록을 취소하셨습니다.", Toast.LENGTH_SHORT).show();
             }
-        }.LayoutDialog(R.layout.dialog_pin_registration);
-        dialog.show();
+        }.LayoutDialog(R.layout.dialog_pin_registration).show();
     }
 
     public boolean isScheduleEmpty(final Context context, String key, final TMapMarkerItem tMapMarkerItem) {
@@ -99,7 +95,7 @@ public class Registration_place {
     public void setSchedule(String key, TMapMarkerItem tMapMarkerItem) {
         switch (key){
             case "tour_start":
-                Tour_list.add(index_Tourlist, tMapMarkerItem);
+                Tour_list.add(0, tMapMarkerItem);
                 isEmpty_tourStart = false;
                 index_Tourlist++;
                 break;
@@ -118,22 +114,20 @@ public class Registration_place {
     }
 
     public void changeLocation(final Context context, final String string, final TMapMarkerItem tMapMarkerItem, final int index) {
-        AlertDialog dialog = new DialogSetting(context, "알림", R.drawable.ic_editlocation) {
-            @Override
-            public void DialogSetPositive() {
-                Tour_list.set(index, tMapMarkerItem);
-                Toast.makeText(context, string + "를 변경하였습니다!", Toast.LENGTH_SHORT).show();
-            }
-            @Override
-            public void LayoutDialogSetPositive(View dialogView) { }
-            @Override
-            public void DialogSetNegative() {
-                Toast.makeText(context, string + " 변경을 취소하였습니다!", Toast.LENGTH_SHORT).show();
-            }
-            @Override
-            public void LayoutDialogSetNegative(View dialogView) { }
-        }.DialogSimple(string + "가 이미 설정되어 있습니다.\n수정하시겠습니까?");
-        dialog.show();
+        new DialogSetting(context, "알림", R.drawable.ic_editlocation).DialogSimple(string + "가 이미 설정되어 있습니다.\n수정하시겠습니까?",
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        Tour_list.set(index, tMapMarkerItem);
+                        Toast.makeText(context, string + "를 변경하였습니다!", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(context, string + " 변경을 취소하였습니다!", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     public boolean isEmpty_Tourlist() {
@@ -197,5 +191,36 @@ public class Registration_place {
         index_Tourlist = 0;
         isEmpty_tourStart = true;
         isEmpty_tourDestination = true;
+    }
+
+    public void addDelete_Tourindex(String title) { Delete_Tour.add(title); }
+
+    public void removeDelete_Tourindex(String title) {
+        for(int i = 0; i < Delete_Tour.size(); i++) {
+            if(Delete_Tour.get(i).equals(title)) {
+                Delete_Tour.remove(i);
+                break;
+            }
+        }
+    }
+
+    public void DeleteTourSchedule() {
+        // 삭제할때 (출발지 삭제, 도착지 삭제의 경우) 조건 추가하기!!
+        for(int i = 0; i < Delete_Tour.size(); i++) {
+            for(int j = 0; j < Tour_list.size(); j++) {
+                if(Delete_Tour.get(i).equals(Tour_list.get(j).getCalloutTitle())) {
+                    if(j == 0 && !isEmpty_tourStart) {
+                        isEmpty_tourStart = true;
+                        index_Tourlist--;
+                    } else if (j == Tour_list.size() - 1 && !isEmpty_tourDestination){
+                        isEmpty_tourDestination = true;
+                    } else {
+                        index_Tourlist--;
+                    }
+                    Tour_list.remove(j);
+                    break;
+                }
+            }
+        }
     }
 }

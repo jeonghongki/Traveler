@@ -31,6 +31,13 @@
         android:visibility="invisible"
         android:soundEffectsEnabled="false"/>
 
+    <Button
+        android:id="@+id/btn_ScheduleReset"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        android:soundEffectsEnabled="false"/>
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/search_POI"
         android:layout_width="wrap_content"

@@ -5,9 +5,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PointF;
+import android.location.Location;
+import android.location.LocationListener;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -20,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.traeveler.dialog.DialogSetting;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.skt.Tmap.TMapAddressInfo;
 import com.skt.Tmap.TMapData;
@@ -27,26 +29,36 @@ import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
 import com.skt.Tmap.TMapPoint;
 import com.skt.Tmap.TMapPolyLine;
+import com.skt.Tmap.TMapTapi;
 import com.skt.Tmap.TMapView;
 
 import java.util.ArrayList;
 
-public class MapFragment extends Fragment {
-    private static String myTmapApiKey = "l7xxde49dc37a0c5414aabfb99bd28677815";
+public class MapFragment extends Fragment{
+    private static final String myTmapApiKey = "l7xxde49dc37a0c5414aabfb99bd28677815";
 
     private double longitude;
     private double latitude;
 
     private GpsTracker gpsTracker;
+    private TMapView tMapView;
 
     private FloatingActionButton fab_main, fab_search, fab_gps, fab_navigation;
-    private static Button btn_ScheduleMarkerShow, btn_ScheduleMarkerPathShow, btn_ScheduleCarPathShow;
+    private static Button btn_ScheduleMarkerShow, btn_ScheduleMarkerPathShow, btn_ScheduleCarPathShow, btn_ScheduleReset;
     private Animation fab_open, fab_close;
     private boolean isFabOpen = false;
 
     private boolean isMarkerSelected = false;
     private boolean isScrollWithZoom = false;
     private boolean isPinBalloonOpen = false;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        gpsTracker = new GpsTracker(context, getActivity());
+        latitude = gpsTracker.getLatitude();
+        longitude = gpsTracker.getLongitude();
+    }
 
     @Nullable
     @Override
@@ -56,15 +68,19 @@ public class MapFragment extends Fragment {
 
         LinearLayout linearLayoutTmap = mapview.findViewById(R.id.linearLayoutTmap);
 
-        gpsTracker = new GpsTracker(context, getActivity());
-        latitude = gpsTracker.getLatitude();
-        longitude = gpsTracker.getLongitude();
-
-        final TMapView tMapView = new TMapView(context);
+        tMapView = new TMapView(context);
         tMapView.setSKTMapApiKey(myTmapApiKey);
-        tMapView.setCenterPoint(longitude, latitude);
+        tMapView.setLocationPoint(longitude, latitude);
+        tMapView.setCenterPoint(longitude, latitude, true);
 //        tMapView.setCenterPoint(128.099383, 35.153312);
         linearLayoutTmap.addView(tMapView);
+
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.map_marker);
+        bitmap = Bitmap.createScaledBitmap(bitmap, 50, 50, false);
+        tMapView.setIcon(bitmap);
+        tMapView.setIconVisibility(true);
+
+        tMapView.setTrackingMode(true);
 
         fab_open = AnimationUtils.loadAnimation(context, R.anim.fab_open);
         fab_close = AnimationUtils.loadAnimation(context, R.anim.fab_close);
@@ -77,6 +93,7 @@ public class MapFragment extends Fragment {
         btn_ScheduleMarkerShow = mapview.findViewById(R.id.btn_ScheduleMarkerShow);
         btn_ScheduleMarkerPathShow = mapview.findViewById(R.id.btn_ScheduleMarkerPathShow);
         btn_ScheduleCarPathShow = mapview.findViewById(R.id.btn_ScheduleCarPathShow);
+        btn_ScheduleReset = mapview.findViewById(R.id.btn_ScheduleReset);
 
         fab_main.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -105,6 +122,24 @@ public class MapFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 toggleFab();
+                final TMapTapi tMapTapi = new TMapTapi(context);
+                if(tMapTapi.isTmapApplicationInstalled()) {
+                    new DialogSetting(context, "Tmap 연동", R.drawable.ic_navigation).DialogSimple("Tmap이 설치되어 있습니다.\nTmap을 실행시키겠습니까?",
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    tMapTapi.invokeTmap();
+                                }
+                            },
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(context, "Tmap 실행을 취소하였습니다.", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                } else {
+
+                }
             }
         });
 
@@ -164,6 +199,13 @@ public class MapFragment extends Fragment {
                         }
                     }
                 }.start();
+            }
+        });
+        btn_ScheduleReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                tMapView.removeAllMarkerItem();
+                tMapView.removeAllTMapPolyLine();
             }
         });
 
@@ -275,4 +317,6 @@ public class MapFragment extends Fragment {
     }
 
     public void ScheduleCarPathShow() { btn_ScheduleCarPathShow.performClick(); }
+
+    public void ScheduleMarkerReset() { btn_ScheduleReset.performClick(); }
 }

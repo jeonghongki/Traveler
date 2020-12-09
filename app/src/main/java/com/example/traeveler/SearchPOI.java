@@ -1,14 +1,15 @@
 package com.example.traeveler;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.traeveler.dialog.DialogLayout;
+import com.example.traeveler.dialog.DialogSetting;
 import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
@@ -28,15 +29,12 @@ public class SearchPOI {
     }
 
     public void searchDialog(){
-        AlertDialog dialog = new DialogSetting(mContext, "명칭(POI) 통합검색", R.drawable.ic_search) {
-            @Override
-            public void DialogSetPositive() {}
+        new DialogLayout(mContext, "명칭(POI) 통합검색", R.drawable.ic_search) {
             @Override
             public void LayoutDialogSetPositive(View dialogView) {
                 edt_search = dialogView.findViewById(R.id.edt_search);
                 final ArrayList<TMapPoint> arrTMapPoint = new ArrayList<>();
                 final ArrayList<String> arrTitle = new ArrayList<>();
-
                 TMapData tMapData = new TMapData();
                 tMapData.findAllPOI(edt_search.getText().toString(), new TMapData.FindAllPOIListenerCallback() {
                     @Override
@@ -51,13 +49,10 @@ public class SearchPOI {
                 });
             }
             @Override
-            public void DialogSetNegative() {}
-            @Override
             public void LayoutDialogSetNegative(View dialogView) {
                 Toast.makeText(mContext, "명칭(POI) 통합검색을 취소하셨습니다.", Toast.LENGTH_SHORT).show();
             }
-        }.LayoutDialog(R.layout.dialog_searchpoi);
-        dialog.show();
+        }.LayoutDialog(R.layout.dialog_searchpoi).show();
     }
 
     private void setMultiMarkers(ArrayList<TMapPoint> arrTPoint, ArrayList<String> arrTitle) {

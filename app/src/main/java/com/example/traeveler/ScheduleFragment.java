@@ -1,6 +1,5 @@
 package com.example.traeveler;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,12 +22,16 @@ import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 
+import com.example.traeveler.dialog.DialogDynamicLayout;
+import com.example.traeveler.dialog.DialogLayout;
+import com.example.traeveler.dialog.DialogSetting;
+
 import java.util.ArrayList;
 import java.util.Random;
 
 public class ScheduleFragment extends Fragment {
     private LinearLayout DynamicAddList;
-    private Button add_btn, btn_mapMark, btn_markerPath, btn_pathSeek, btn_searchDB, btn_resetDB, btn_saveDB;
+    private Button add_btn, btn_mapMark, btn_markerPath, btn_pathSeek, btn_searchDB, btn_resetDB, btn_saveDB, btn_deleteDB;
     private static Button btn_dataload;
     private TextView end_list_textview;
     private EditText edt_tourstart, edt_tourdestination;
@@ -42,7 +45,6 @@ public class ScheduleFragment extends Fragment {
     private final static ArrayList<EditText> Dynamic_edtlist = new ArrayList<>();
 
     private int listNumber = 1;
-    private boolean isDBopen = false;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -64,6 +66,7 @@ public class ScheduleFragment extends Fragment {
         btn_searchDB = scheduleview.findViewById(R.id.btn_searchDB);
         btn_resetDB = scheduleview.findViewById(R.id.btn_resetDB);
         btn_saveDB = scheduleview.findViewById(R.id.btn_saveDB);
+        btn_deleteDB = scheduleview.findViewById(R.id.btn_deleteDB);
         end_list_textview = scheduleview.findViewById(R.id.end_list_textview);
         edt_tourstart = scheduleview.findViewById(R.id.tour_start);
         edt_tourdestination = scheduleview.findViewById(R.id.tour_destination);
@@ -91,9 +94,7 @@ public class ScheduleFragment extends Fragment {
         btn_dataload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DynamicAddList.removeAllViews();
-                Dynamic_edtlist.clear();
-                listNumber = 1;
+                DynamicListReset(false);
                 setScheduleList(getContext(), DynamicAddList, end_list_textview);
             }
         });
@@ -116,7 +117,7 @@ public class ScheduleFragment extends Fragment {
         btn_pathSeek.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                activity.setSceduleCarPathShow(true);
+                activity.setScheduleCarPathShow(true);
                 activity.tabchange(0);
             }
         });
@@ -124,68 +125,115 @@ public class ScheduleFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 if(travelerDB.isExistData(travelerDB, mDate, "Date")) {
-                    isDBopen = true;
                     ScheduleListReset(getContext());
                     Registration_place registration_place = new Registration_place(getContext());
                     registration_place.setTourlistFromDB(travelerDB, mDate);
                     btn_dataload.performClick();
                 } else {
                     Toast.makeText(getContext(), "일정이 존재하지 않습니다!", Toast.LENGTH_SHORT).show();
-                    isDBopen = false;
+                    ScheduleListReset(getContext());
+                    DynamicListReset(true);
                 }
             }
         });
         btn_resetDB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isDBopen) {
-                    travelerDB.resetDB(travelerDB);
-                    isDBopen = false;
-                }
-                ScheduleListReset(getContext());
-                DynamicAddList.removeAllViews();
-                Dynamic_edtlist.clear();
-                listNumber = 1;
-                end_list_textview.setText((listNumber + 1) + ".");
+                new DialogSetting(getContext(), "초기화", R.drawable.ic_reset).DialogThreeButton("DB에 저장된 모든 데이터를 삭제하시겠습니까?",
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                travelerDB.resetDB(travelerDB);
+                                activity.setScheduleMarkerReset(true);
+                                Toast.makeText(getContext(), "DB에 저장된 모든 데이터를 삭제하였습니다.", Toast.LENGTH_SHORT).show();
+                                ScheduleListReset(getContext());
+                                DynamicListReset(true);
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getContext(), "초기화 작업을 취소하였습니다.", Toast.LENGTH_SHORT).show();
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                ScheduleListReset(getContext());
+                                DynamicListReset(true);
+                                if(travelerDB.isExistData(travelerDB, mDate, "Date"))
+                                    travelerDB.DeleteSchedule(travelerDB, mDate);
+                            }
+                        });
             }
         });
         btn_saveDB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Registration_place registration_place = new Registration_place(getContext());
+                final Registration_place registration_place = new Registration_place(getContext());
                 if(!registration_place.isEmpty_Tourlist()) {
-                    Random random = new Random();
-                    String Id = String.valueOf(random.nextInt());
-                    while (travelerDB.isExistData(travelerDB, Id, "Id")) {
-                        Id = String.valueOf(random.nextInt());
+                    if(!travelerDB.isExistData(travelerDB, mDate, "Date")) {
+                        Random random = new Random();
+                        String Id = String.valueOf(random.nextInt());
+                        while (travelerDB.isExistData(travelerDB, Id, "Id")) {
+                            Id = String.valueOf(random.nextInt());
+                        }
+                        travelerDB.InsertDate(travelerDB, Id, mDate);
+                        for (int i = 0; i < registration_place.getTourlistLength(); i++) {
+                            travelerDB.InsertSchedule(travelerDB, String.valueOf(i), registration_place.getTourlistTitle(i),
+                                    registration_place.getTourlistLongitude(i), registration_place.getTourlistLatitude(i), Id);
+                        }
+                        Toast.makeText(getContext(), "일정을 저장하였습니다.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        new DialogSetting(getContext(), "주의", R.drawable.ic_save).DialogSimple("해당 날짜에 이미 저장된 일정이 있습니다!\n저장을 계속하시겠습니까?\n(이미 저장되어있던 일정은 사라집니다!)",
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        travelerDB.DeleteSchedule(travelerDB, mDate);
+                                        Random random = new Random();
+                                        String Id = String.valueOf(random.nextInt());
+                                        while (travelerDB.isExistData(travelerDB, Id, "Id")) {
+                                            Id = String.valueOf(random.nextInt());
+                                        }
+                                        travelerDB.InsertDate(travelerDB, Id, mDate);
+                                        for (int i = 0; i < registration_place.getTourlistLength(); i++) {
+                                            travelerDB.InsertSchedule(travelerDB, String.valueOf(i), registration_place.getTourlistTitle(i),
+                                                    registration_place.getTourlistLongitude(i), registration_place.getTourlistLatitude(i), Id);
+                                        }
+                                        Toast.makeText(getContext(), "일정을 저장하였습니다.", Toast.LENGTH_SHORT).show();
+                                    }
+                                },
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getContext(), "저장을 취소하였습니다.", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                     }
-                    travelerDB.InsertDate(travelerDB, Id, mDate);
-                    for(int i = 0; i < registration_place.getTourlistLength(); i++) {
-                        travelerDB.InsertSchedule(travelerDB, String.valueOf(i), registration_place.getTourlistTitle(i),
-                                registration_place.getTourlistLongitude(i), registration_place.getTourlistLatitude(i), Id);
-                    }
-                    Toast.makeText(getContext(), "일정을 저장하였습니다.", Toast.LENGTH_SHORT).show();
                 } else {
-                    AlertDialog dialog = new DialogSetting(getContext(), "주의", R.drawable.ic_save) {
+                    Toast.makeText(getContext(), "저장할 일정이 존재하지 않습니다!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        btn_deleteDB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final Registration_place registration_place = new Registration_place(getContext());
+                if(registration_place.getTourlistLength() != 0) {
+                    new DialogDynamicLayout(getContext(), "일정 삭제", R.drawable.ic_delete) {
                         @Override
-                        public void DialogSetPositive() {
-                            Random random = new Random();
-                            String Id = String.valueOf(random.nextInt());
-                            while (travelerDB.isExistData(travelerDB, Id, "Id")) {
-                                Id = String.valueOf(random.nextInt());
-                            }
-                            travelerDB.InsertDate(travelerDB, Id, mDate);
+                        public void LayoutDialogSetPositive(View dialogView) {
+                            registration_place.DeleteTourSchedule();
+                            DynamicListReset(true);
+                            setScheduleList(getContext(), DynamicAddList, end_list_textview);
                         }
                         @Override
-                        public void LayoutDialogSetPositive(View dialogView) { }
-                        @Override
-                        public void DialogSetNegative() {
-                            Toast.makeText(getContext(), "저장을 취소하였습니다.", Toast.LENGTH_SHORT).show();
+                        public void LayoutDialogSetNegative(View dialogView) {
+                            Toast.makeText(getContext(), "일정 삭제를 취소하였습니다.", Toast.LENGTH_SHORT).show();
                         }
-                        @Override
-                        public void LayoutDialogSetNegative(View dialogView) { }
-                    }.DialogSimple("저장할 여행지가 존재하지 않습니다!\n현재 설정된 날짜만 저장하시겠습니까?");
-                    dialog.show();
+                    }.DynamicLayoutDialog(R.layout.schedule_checkboxlsit).show();
+                } else {
+                    Toast.makeText(getContext(), "일정이 존재하지 않습니다!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -247,7 +295,7 @@ public class ScheduleFragment extends Fragment {
         dynamic_spc.setLayoutParams(params_spc);
 
         dynamic_layout.setWeightSum(1f);
-        dynamic_layout.addView(dynamic_test);;
+        dynamic_layout.addView(dynamic_test);
         dynamic_layout.addView(dynamic_edt);
         dynamic_layout.addView(dynamic_spc);
 
@@ -256,7 +304,6 @@ public class ScheduleFragment extends Fragment {
     }
 
     public void setScheduleList(Context context, LinearLayout linearLayout, TextView textView) {
-        // 출발지, 도착지, 경유지 설정시 해당 위치에 정확하게 들어가도록 설정하기! -- 수정필요!!
         Registration_place registration_place = new Registration_place(context);
         if(!registration_place.isEmpty_Tourlist()){
             for (int i = 0; i < registration_place.getTourlistLength(); i++) {
@@ -292,15 +339,15 @@ public class ScheduleFragment extends Fragment {
         if(!registration_place.isEmpty_Tourlist()) {
             for (int i = 0; i < registration_place.getTourlistLength(); i++) {
                 if(i == 0) {
-                    if(!edt_tourstart.getText().equals(registration_place.getTourlistTitle(i))) {
+                    if(!edt_tourstart.getText().toString().equals(registration_place.getTourlistTitle(i))) {
                         registration_place.setTourlistTitle(edt_tourstart.getText().toString(), i);
                     }
                 } else if (i > 0 && i < registration_place.getTourlistLength() - 1) {
-                    if(!Dynamic_edtlist.get(i - 1).getText().equals(registration_place.getTourlistTitle(i))) {
+                    if(!Dynamic_edtlist.get(i - 1).getText().toString().equals(registration_place.getTourlistTitle(i))) {
                         registration_place.setTourlistTitle(Dynamic_edtlist.get(i - 1).getText().toString(), i);
                     }
                 } else {
-                    if(!edt_tourdestination.getText().equals(registration_place.getTourlistTitle(i))) {
+                    if(!edt_tourdestination.getText().toString().equals(registration_place.getTourlistTitle(i))) {
                         registration_place.setTourlistTitle(edt_tourdestination.getText().toString(), i);
                     }
                 }
@@ -313,5 +360,13 @@ public class ScheduleFragment extends Fragment {
         registration_place.TourlistReset();
         edt_tourstart.setText("");
         edt_tourdestination.setText("");
+    }
+
+    private void DynamicListReset(boolean listendset) {
+        DynamicAddList.removeAllViews();
+        Dynamic_edtlist.clear();
+        listNumber = 1;
+        if(listendset)
+            end_list_textview.setText((listNumber + 1) + ".");
     }
 }
