@@ -25,6 +25,7 @@ public class Registration_place {
 
     private final static ArrayList<TMapMarkerItem> Tour_list = new ArrayList<>();
     private final static ArrayList<String> Delete_Tour = new ArrayList<>();
+    private final static ArrayList<Integer> Tmap_link = new ArrayList<>();
 
     public Registration_place(Context context, TMapMarkerItem tMapMarkerItem){
         mContext = context;
@@ -205,7 +206,6 @@ public class Registration_place {
     }
 
     public void DeleteTourSchedule() {
-        // 삭제할때 (출발지 삭제, 도착지 삭제의 경우) 조건 추가하기!!
         for(int i = 0; i < Delete_Tour.size(); i++) {
             for(int j = 0; j < Tour_list.size(); j++) {
                 if(Delete_Tour.get(i).equals(Tour_list.get(j).getCalloutTitle())) {
@@ -223,4 +223,16 @@ public class Registration_place {
             }
         }
     }
+
+    public void setTmap_link(int value) { Tmap_link.add(value); }
+
+    public void changeTmap_link(int value, int index) { Tmap_link.set(index, value); }
+
+    public int getTmap_link(int index) { return Tmap_link.get(index);}
+
+    public int getLengthTmap_link() { return Tmap_link.size(); }
+
+    public void deleteTmap_link(int index) { Tmap_link.remove(index); }
+
+    public void removeTmap_link() { Tmap_link.clear(); }
 }

@@ -1,13 +1,16 @@
 package com.example.traeveler;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.location.Location;
 import android.location.LocationListener;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,9 +25,11 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.traeveler.dialog.DialogSetting;
+import com.example.traeveler.dialog.DialogSwitchLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.skt.Tmap.TMapAddressInfo;
 import com.skt.Tmap.TMapData;
+import com.skt.Tmap.TMapInfo;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPOIItem;
 import com.skt.Tmap.TMapPoint;
@@ -33,6 +38,7 @@ import com.skt.Tmap.TMapTapi;
 import com.skt.Tmap.TMapView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MapFragment extends Fragment{
     private static final String myTmapApiKey = "l7xxde49dc37a0c5414aabfb99bd28677815";
@@ -72,7 +78,7 @@ public class MapFragment extends Fragment{
         tMapView.setSKTMapApiKey(myTmapApiKey);
         tMapView.setLocationPoint(longitude, latitude);
         tMapView.setCenterPoint(longitude, latitude, true);
-//        tMapView.setCenterPoint(128.099383, 35.153312);
+//        tMapView.setCenterPoint(128.099383, 35.153312, true);
         linearLayoutTmap.addView(tMapView);
 
         Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.map_marker);
@@ -115,7 +121,7 @@ public class MapFragment extends Fragment{
                 toggleFab();
                 latitude = gpsTracker.getLatitude();
                 longitude = gpsTracker.getLongitude();
-                tMapView.setCenterPoint(longitude, latitude);
+                tMapView.setCenterPoint(longitude, latitude, true);
             }
         });
         fab_navigation.setOnClickListener(new View.OnClickListener() {
@@ -123,12 +129,80 @@ public class MapFragment extends Fragment{
             public void onClick(View view) {
                 toggleFab();
                 final TMapTapi tMapTapi = new TMapTapi(context);
+                final Registration_place registration_place = new Registration_place(context);
+                registration_place.removeTmap_link();
                 if(tMapTapi.isTmapApplicationInstalled()) {
                     new DialogSetting(context, "Tmap 연동", R.drawable.ic_navigation).DialogSimple("Tmap이 설치되어 있습니다.\nTmap을 실행시키겠습니까?",
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    tMapTapi.invokeTmap();
+                                    if(registration_place.getTourlistLength() < 2) {
+                                        tMapTapi.invokeTmap();
+                                    } else {
+                                        new DialogSwitchLayout(context, "출발지/경유지/목적지 설정", R.drawable.ic_navigation) {
+                                            @Override
+                                            public void LayoutDialogSetPositive(View dialogView) {
+                                                int count = 0, empty_index = -1;
+                                                for(int i = 0; i < registration_place.getLengthTmap_link(); i++) {
+                                                    if(registration_place.getTmap_link(i) == 0) {
+                                                        count++;
+                                                        empty_index = i;
+                                                    }
+                                                }
+                                                if(registration_place.getLengthTmap_link() > 2) {
+                                                    if(count > 1) {
+                                                        Toast.makeText(context, "길 안내에 오류가 발생하였습니다. Tmap으로 연결됩니다.", Toast.LENGTH_SHORT).show();
+                                                        tMapTapi.invokeTmap();
+                                                    } else {
+                                                        HashMap pathInfo = new HashMap();
+                                                        if(empty_index != -1) {
+                                                            registration_place.deleteTmap_link(empty_index);
+                                                            pathInfo.put("rGoName", registration_place.getTourlistTitle(registration_place.getTmap_link(1) - 1));
+                                                            pathInfo.put("rGoX", registration_place.getTourlistLongitude(registration_place.getTmap_link(1) - 1));
+                                                            pathInfo.put("rGoY", registration_place.getTourlistLatitude(registration_place.getTmap_link(1) - 1));
+
+                                                            pathInfo.put("rStName", registration_place.getTourlistTitle(registration_place.getTmap_link(0) - 1));
+                                                            pathInfo.put("rStX", registration_place.getTourlistLongitude(registration_place.getTmap_link(0) - 1));
+                                                            pathInfo.put("rStY", registration_place.getTourlistLatitude(registration_place.getTmap_link(0) - 1));
+                                                        } else {
+                                                            pathInfo.put("rGoName", registration_place.getTourlistTitle(registration_place.getTmap_link(2) - 1));
+                                                            pathInfo.put("rGoX", registration_place.getTourlistLongitude(registration_place.getTmap_link(2) - 1));
+                                                            pathInfo.put("rGoY", registration_place.getTourlistLatitude(registration_place.getTmap_link(2) - 1));
+
+                                                            pathInfo.put("rStName", registration_place.getTourlistTitle(registration_place.getTmap_link(0) - 1));
+                                                            pathInfo.put("rStX", registration_place.getTourlistLongitude(registration_place.getTmap_link(0) - 1));
+                                                            pathInfo.put("rStY", registration_place.getTourlistLatitude(registration_place.getTmap_link(0) - 1));
+
+                                                            pathInfo.put("rV1Name", registration_place.getTourlistTitle(registration_place.getTmap_link(1) - 1));
+                                                            pathInfo.put("rV1X", registration_place.getTourlistLongitude(registration_place.getTmap_link(1) - 1));
+                                                            pathInfo.put("rV1Y", registration_place.getTourlistLatitude(registration_place.getTmap_link(1) - 1));
+                                                        }
+                                                        tMapTapi.invokeRoute(pathInfo);
+                                                    }
+                                                } else {
+                                                    if(count > 0) {
+                                                        Toast.makeText(context, "길 안내에 오류가 발생하였습니다. Tmap으로 연결됩니다.", Toast.LENGTH_SHORT).show();
+                                                        tMapTapi.invokeTmap();
+                                                    } else {
+                                                        HashMap pathInfo = new HashMap();
+                                                        pathInfo.put("rGoName", registration_place.getTourlistTitle(registration_place.getTmap_link(1) - 1));
+                                                        pathInfo.put("rGoX", registration_place.getTourlistLongitude(registration_place.getTmap_link(1) - 1));
+                                                        pathInfo.put("rGoY", registration_place.getTourlistLatitude(registration_place.getTmap_link(1) - 1));
+
+                                                        pathInfo.put("rStName", registration_place.getTourlistTitle(registration_place.getTmap_link(0) - 1));
+                                                        pathInfo.put("rStX", registration_place.getTourlistLongitude(registration_place.getTmap_link(0) - 1));
+                                                        pathInfo.put("rStY", registration_place.getTourlistLatitude(registration_place.getTmap_link(0) - 1));
+                                                        tMapTapi.invokeRoute(pathInfo);
+                                                    }
+                                                }
+                                            }
+                                            @Override
+                                            public void LayoutDialogSetNegative(View dialogView) {
+                                                Toast.makeText(context, "길 안내를 실패하였습니다. Tmap으로 연결됩니다.", Toast.LENGTH_SHORT).show();
+                                                tMapTapi.invokeTmap();
+                                            }
+                                        }.SwitchLayoutDialog(R.layout.map_tmaplinkroute);
+                                    }
                                 }
                             },
                             new Runnable() {
@@ -138,7 +212,22 @@ public class MapFragment extends Fragment{
                                 }
                             });
                 } else {
-
+                    new DialogSetting(context, "Tmap 설치", R.drawable.ic_navigation).DialogSimple("Tmap이 설치되어 있지 않습니다..\nTmap을 설치하시겠습니까?",
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    ArrayList<String> result = tMapTapi.getTMapDownUrl();
+                                    Uri uri = Uri.parse(result.get(0));
+                                    Intent intent= new Intent(Intent.ACTION_VIEW, uri);
+                                    startActivity(intent);
+                                }
+                            },
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(context, "Tmap 설치를 취소하였습니다.", Toast.LENGTH_SHORT).show();
+                                }
+                            });
                 }
             }
         });
@@ -146,6 +235,7 @@ public class MapFragment extends Fragment{
         btn_ScheduleMarkerShow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                ArrayList<TMapPoint> points = new ArrayList<>();
                 Registration_place registration_place = new Registration_place(context);
                 if (registration_place.getTourlistLength() != 0) {
                     tMapView.removeAllMarkerItem();
@@ -159,8 +249,12 @@ public class MapFragment extends Fragment{
                         } else {
                             registration_place.getTourlistMark(i).setCalloutSubTitle("경유지" + i);
                         }
+                        points.add(registration_place.getTourlistMarkPoint(i));
                         tMapView.addMarkerItem("Schedule" + i, registration_place.getTourlistMark(i));
                     }
+                    TMapInfo info = tMapView.getDisplayTMapInfo(points);
+                    tMapView.setCenterPoint(info.getTMapPoint().getLongitude(), info.getTMapPoint().getLatitude(), true);
+                    tMapView.setZoomLevel(info.getTMapZoomLevel());
                 } else {
                     Toast.makeText(context, "설정한 목적지가 없습니다!", Toast.LENGTH_SHORT).show();
                 }

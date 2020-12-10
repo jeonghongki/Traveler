@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Switch
+        android:id="@+id/swictch_tmapstopover"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="경유지 비활성화"
+        android:textSize="15dp"
+        android:gravity="center_vertical|end" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="출발지"
+        android:textSize="18dp"
+        android:layout_marginLeft="20dp"/>
+
+    <Spinner
+        android:id="@+id/tmap_start"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:spinnerMode="dropdown"
+        android:layout_marginLeft="20dp"/>
+
+    <LinearLayout
+        android:id="@+id/tmap_stopover"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginLeft="20dp">
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="도착지"
+        android:textSize="18dp"
+        android:layout_marginLeft="20dp"/>
+
+    <Spinner
+        android:id="@+id/tmap_destination"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:spinnerMode="dropdown"
+        android:layout_marginLeft="20dp"/>
+
+
+</LinearLayout>
